@@ -9,6 +9,9 @@ RUN npm ci
 
 COPY app/ .
 
+ARG REACT_APP_TMDB_API_KEY
+ENV REACT_APP_TMDB_API_KEY=$REACT_APP_TMDB_API_KEY
+
 RUN npm run build
 
 
