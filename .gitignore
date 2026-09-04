@@ -20,4 +20,4 @@ Thumbs.db
 # Terraform
 .terraform/
 *.tfstate
-*.tfstate.*
+*.tfstate.*app/.env
