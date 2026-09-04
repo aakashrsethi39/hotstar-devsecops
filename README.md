@@ -54,3 +54,4 @@ The project will progressively implement:
 
 # CI/CD pipeline
 # CI/CD 
+# CI 
