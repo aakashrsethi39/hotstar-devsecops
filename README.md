@@ -52,3 +52,4 @@ The project will progressively implement:
 
 \- OWASP ZAP
 
+# CI/CD pipeline
