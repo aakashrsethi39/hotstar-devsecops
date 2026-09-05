@@ -43,7 +43,7 @@ function App() {
   
     </div>
     <div className='z'>
-            
+      <p style={{ textAlign: 'center' }}>🚀 DevSecOps Release 26</p>
       <Row title="Latest releases" fetchUrl={requests.fetchActionMovies} />
       <Row title="Free-Newly Added" fetchUrl={requests.fetchComedyMovies}/>
       <Row title="Disney Movies" fetchUrl={requests.fetchDocumentaries}/>
