@@ -125,7 +125,7 @@ pipeline {
 
                     cd infra-repo
 
-                    sed -i "s/IMAGE_TAG/9999/g" k8s/deployment.yaml
+                    sed -i "s/IMAGE_TAG/${BUILD_NUMBER}/g" k8s/deployment.yaml
 
                     kubectl apply -f k8s/
 
