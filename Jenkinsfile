@@ -152,6 +152,65 @@ pipeline {
             }
         }
 
+        stage('Post-Deployment Verification') {
+            steps {
+                sh '''
+                    echo "Checking deployment..."
+
+                    kubectl get deployment hotstar-clone
+
+                    echo "Checking pods..."
+
+                    kubectl get pods \
+                        -l app=hotstar-clone \
+                        -o wide
+
+                    echo "Checking service..."
+
+                    kubectl get svc hotstar-clone
+
+                    echo "Waiting for LoadBalancer hostname..."
+
+                    for i in $(seq 1 30); do
+                        ALB_URL=$(kubectl get svc hotstar-clone \
+                            -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+
+                        if [ -n "$ALB_URL" ]; then
+                            break
+                        fi
+
+                        echo "LoadBalancer hostname not available yet..."
+                        sleep 10
+                    done
+
+                    if [ -z "$ALB_URL" ]; then
+                        echo "ERROR: LoadBalancer hostname was not assigned."
+                        exit 1
+                    fi
+
+                    echo "Application URL: http://${ALB_URL}"
+
+                    echo "Checking HTTP response..."
+
+                    HTTP_STATUS=$(curl -L \
+                        -s \
+                        -o /dev/null \
+                        -w "%{http_code}" \
+                        --max-time 15 \
+                        "http://${ALB_URL}/")
+
+                    echo "HTTP status: ${HTTP_STATUS}"
+
+                    if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 400 ]; then
+                        echo "ERROR: Application health check failed."
+                        exit 1
+                    fi
+
+                    echo "Application verification successful."
+                '''
+            }
+        }
+
         stage('OWASP ZAP DAST') {
             steps {
                 sh '''
