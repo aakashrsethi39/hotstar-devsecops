@@ -129,9 +129,25 @@ pipeline {
 
                     kubectl apply -f k8s/
 
-                    kubectl rollout status \
+                    if ! kubectl rollout status \
                         deployment/hotstar-clone \
-                        --timeout=120s
+                        --timeout=120s; then
+
+                        echo "Deployment failed!"
+                        echo "Rolling back to previous version..."
+
+                        kubectl rollout undo deployment/hotstar-clone
+
+                        kubectl rollout status \
+                            deployment/hotstar-clone \
+                            --timeout=120s
+
+                        echo "Rollback completed."
+
+                        exit 1
+                    fi
+
+                    echo "Deployment successful."
                 '''
             }
         }
