@@ -223,8 +223,34 @@ pipeline {
                         -cmd \
                         -port 8090 \
                         -quickurl "http://${ALB_URL}" \
-                        -quickout "$WORKSPACE/zap-report.html" \
+                        -quickout "$WORKSPACE/zap-report.json" \
                         -quickprogress
+
+                    echo "ZAP scan completed."
+
+                    echo "ZAP findings:"
+                    jq '
+                        [.site[]?.alerts[]? | .riskcode]
+                        | group_by(.)
+                        | map({
+                            riskcode: .[0],
+                            count: length
+                        })
+                    ' "$WORKSPACE/zap-report.json"
+
+                    HIGH_COUNT=$(jq '
+                        [.site[]?.alerts[]? | select(.riskcode == "3")]
+                        | length
+                    ' "$WORKSPACE/zap-report.json")
+
+                    echo "High-risk findings: ${HIGH_COUNT}"
+
+                    if [ "$HIGH_COUNT" -gt 0 ]; then
+                        echo "ERROR: ZAP found HIGH-risk vulnerabilities."
+                        exit 1
+                    fi
+
+                    echo "ZAP security gate passed."
                 '''
             }
         }
@@ -233,7 +259,7 @@ pipeline {
     post {
         always {
             archiveArtifacts \
-                artifacts: 'zap-report.html',
+                artifacts: 'zap-report.json',
                 allowEmptyArchive: true
         }
     }
