@@ -6,6 +6,7 @@ pipeline {
         AWS_ACCOUNT_ID = '892334471137'
         ECR_REPOSITORY = 'hotstar-clone'
         ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        IMAGE_TAG = ''
     }
 
     stages {
@@ -14,6 +15,15 @@ pipeline {
             steps {
                 git branch: 'main',
                     url: 'https://github.com/aakashrsethi39/hotstar-devsecops.git'
+
+                script {
+                    env.IMAGE_TAG = sh(
+                        script: 'git rev-parse --short HEAD',
+                        returnStdout: true
+                    ).trim()
+
+                    echo "Git commit SHA: ${env.IMAGE_TAG}"
+                } 
             }
         }
 
@@ -64,7 +74,7 @@ pipeline {
                     sh '''
                         docker build \
                           --build-arg REACT_APP_TMDB_API_KEY="$TMDB_API_KEY" \
-                          -t ${ECR_REPOSITORY}:${BUILD_NUMBER} \
+                          -t ${ECR_REPOSITORY}:${IMAGE_TAG} \
                           .
                     '''
                 }
@@ -77,7 +87,7 @@ pipeline {
                     trivy image \
                       --severity HIGH,CRITICAL \
                       --exit-code 1 \
-                      ${ECR_REPOSITORY}:${BUILD_NUMBER}
+                      ${ECR_REPOSITORY}:${IMAGE_TAG}
                 '''
             }
         }
@@ -92,7 +102,7 @@ pipeline {
                         --exit-code \
                         --format sarif \
                         --output "$WORKSPACE/scout-report.sarif.json" \
-                        ${ECR_REPOSITORY}:${BUILD_NUMBER}
+                        ${ECR_REPOSITORY}:${IMAGE_TAG}
 
                     echo "Docker Scout security gate passed."
                 '''
@@ -116,8 +126,8 @@ pipeline {
             steps {
                 sh '''
                     docker tag \
-                      ${ECR_REPOSITORY}:${BUILD_NUMBER} \
-                      ${ECR_REGISTRY}/${ECR_REPOSITORY}:${BUILD_NUMBER}
+                      ${ECR_REPOSITORY}:${IMAGE_TAG} \
+                      ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
                 '''
             }
         }
@@ -126,7 +136,7 @@ pipeline {
             steps {
                 sh '''
                     docker push \
-                      ${ECR_REGISTRY}/${ECR_REPOSITORY}:${BUILD_NUMBER}
+                      ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
                 '''
             }
         }
@@ -142,7 +152,7 @@ pipeline {
 
                     cd infra-repo
 
-                    sed -i "s/IMAGE_TAG/${BUILD_NUMBER}/g" k8s/deployment.yaml
+                    sed -i "s/IMAGE_TAG/${IMAGE_TAG}/g" k8s/deployment.yaml
 
                     echo "Applying Kubernetes manifests..."
 
