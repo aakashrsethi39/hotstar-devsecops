@@ -6,7 +6,6 @@ pipeline {
         AWS_ACCOUNT_ID = '892334471137'
         ECR_REPOSITORY = 'hotstar-clone'
         ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-        IMAGE_TAG = ''
     }
 
     stages {
@@ -21,6 +20,10 @@ pipeline {
                         script: 'git rev-parse --short HEAD',
                         returnStdout: true
                     ).trim()
+
+                    if (!env.IMAGE_TAG) {
+                        error('IMAGE_TAG could not be determined from Git')
+                    }
 
                     echo "Git commit SHA: ${env.IMAGE_TAG}"
                 } 
