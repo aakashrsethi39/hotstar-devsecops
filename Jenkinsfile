@@ -26,7 +26,8 @@ pipeline {
                         sh """
                             ${scannerHome}/bin/sonar-scanner \
                               -Dsonar.projectKey=hotstar-clone \
-                              -Dsonar.sources=.
+                              -Dsonar.sources=app \
+                              -Dsonar.exclusions=app/node_modules/**,app/build/**,**/zap-report.*,**/*-report.*
                         """
                     }
                 }
