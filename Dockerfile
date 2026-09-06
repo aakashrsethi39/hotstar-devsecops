@@ -1,4 +1,3 @@
-# ---------- Build Stage ----------
 FROM node:20-alpine AS build
 
 WORKDIR /app
@@ -15,15 +14,11 @@ ENV REACT_APP_TMDB_API_KEY=$REACT_APP_TMDB_API_KEY
 RUN npm run build
 
 
-# ---------- Production Stage ----------
-FROM nginx:alpine
-
-RUN apk update && \
-    apk upgrade --no-cache
-
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+FROM nginx:1-alpine-slim
 
 COPY --from=build /app/build /usr/share/nginx/html
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
