@@ -33,6 +33,14 @@ pipeline {
             }
         }
 
+        stage('SonarQube Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
         stage('Trivy Filesystem Scan') {
             steps {
                 sh '''
@@ -135,7 +143,14 @@ pipeline {
 
                     sed -i "s/IMAGE_TAG/${BUILD_NUMBER}/g" k8s/deployment.yaml
 
-                    kubectl apply -f k8s/
+                    echo "Applying Kubernetes manifests..."
+
+                    if ! kubectl apply -f k8s/; then
+                        echo "ERROR: Kubernetes deployment failed during apply."
+                        exit 1
+                    fi
+
+                    echo "Waiting for rollout..."
 
                     if ! kubectl rollout status \
                         deployment/hotstar-clone \
