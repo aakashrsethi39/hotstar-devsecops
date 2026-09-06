@@ -16,10 +16,23 @@ RUN npm run build
 
 FROM nginx:1-alpine-slim
 
+RUN addgroup -S nginxgroup && \
+    adduser -S nginxuser -G nginxgroup
+
 COPY --from=build /app/build /usr/share/nginx/html
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+RUN sed -i 's|^[[:space:]]*pid[[:space:]].*;|pid /tmp/nginx.pid;|' /etc/nginx/nginx.conf && \
+    mkdir -p /var/cache/nginx /var/run/nginx && \
+    chown -R nginxuser:nginxgroup \
+        /var/cache/nginx \
+        /var/run/nginx \
+        /usr/share/nginx/html \
+        /etc/nginx
+
+USER nginxuser
+
+EXPOSE 8080
 
 CMD ["nginx", "-g", "daemon off;"]

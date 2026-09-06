@@ -76,8 +76,16 @@ pipeline {
         stage('Docker Scout Scan') {
             steps {
                 sh '''
-                    docker scout quickview \
-                      ${ECR_REPOSITORY}:${BUILD_NUMBER}
+                    echo "Running Docker Scout vulnerability scan..."
+
+                    docker scout cves \
+                        --only-severity high,critical \
+                        --exit-code \
+                        --format sarif \
+                        --output "$WORKSPACE/scout-report.sarif.json" \
+                        ${ECR_REPOSITORY}:${BUILD_NUMBER}
+
+                    echo "Docker Scout security gate passed."
                 '''
             }
         }
@@ -259,7 +267,7 @@ pipeline {
     post {
         always {
             archiveArtifacts \
-                artifacts: 'zap-report.json',
+                artifacts: 'zap-report.json, scout-report.sarif.json',
                 allowEmptyArchive: true
         }
     }
