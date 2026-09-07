@@ -144,51 +144,56 @@ pipeline {
             }
         }
 
-        stage('Deploy to EKS') {
+        stage('Update GitOps Manifest') {
             steps {
-                sh '''
-                    rm -rf infra-repo
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'github-infra-write',
+                        usernameVariable: 'GIT_USERNAME',
+                        passwordVariable: 'GIT_TOKEN'
+                    )
+                ]) {
+                    sh '''
+                        set -e
 
-                    git clone \
-                        https://github.com/aakashrsethi39/hotstar-dev-secops.git \
-                        infra-repo
+                        echo "Cloning GitOps repository..."
 
-                    cd infra-repo
+                        rm -rf infra-repo
 
-                    sed -i "s/IMAGE_TAG/${IMAGE_TAG}/g" k8s/deployment.yaml
+                        git clone \
+                            https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/aakashrsethi39/hotstar-dev-secops.git \
+                            infra-repo
 
-                    echo "Applying Kubernetes manifests..."
+                        cd infra-repo
 
-                    if ! kubectl apply -f k8s/; then
-                        echo "ERROR: Kubernetes deployment failed during apply."
-                        exit 1
-                    fi
+                        echo "Updating Kubernetes image to ${IMAGE_TAG}..."
 
-                    echo "Waiting for rollout..."
+                        sed -i "s|image: .*hotstar-clone.*|image: 892334471137.dkr.ecr.ap-south-1.amazonaws.com/hotstar-clone:${IMAGE_TAG}|" k8s/deployment.yaml
 
-                    if ! kubectl rollout status \
-                        deployment/hotstar-clone \
-                        --timeout=120s; then
+                        echo "Updated image:"
+                        grep "image:" k8s/deployment.yaml
 
-                        echo "Deployment failed!"
-                        echo "Rolling back to previous version..."
+                        git config user.name "Jenkins"
+                        git config user.email "jenkins@localhost"
 
-                        kubectl rollout undo deployment/hotstar-clone
+                        git add k8s/deployment.yaml
 
-                        kubectl rollout status \
-                            deployment/hotstar-clone \
-                            --timeout=120s
+                        if git diff --cached --quiet; then
+                            echo "No image change detected."
+                            exit 0
+                        fi
 
-                        echo "Rollback completed."
+                        git commit -m "Update Hotstar image to ${IMAGE_TAG}"
 
-                        exit 1
-                    fi
+                        echo "Pushing GitOps change..."
 
-                    echo "Deployment successful."
-                '''
+                        git push origin main
+
+                        echo "GitOps repository updated successfully."
+                    '''
+                }
             }
         }
-
         stage('Post-Deployment Verification') {
             steps {
                 sh '''
