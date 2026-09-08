@@ -197,25 +197,55 @@ pipeline {
         stage('Post-Deployment Verification') {
             steps {
                 sh '''
-                    echo "Checking deployment..."
+                    set -e
 
+                    echo "Waiting for Argo CD to deploy image ${IMAGE_TAG}..."
+
+                    EXPECTED_IMAGE="892334471137.dkr.ecr.ap-south-1.amazonaws.com/hotstar-clone:${IMAGE_TAG}"
+
+                    for i in $(seq 1 60); do
+
+                        CURRENT_IMAGE=$(kubectl get deployment hotstar-clone \
+                            -o jsonpath='{.spec.template.spec.containers[0].image}' \
+                            2>/dev/null || true)
+
+                        echo "Current image: ${CURRENT_IMAGE}"
+
+                        if [ "$CURRENT_IMAGE" = "$EXPECTED_IMAGE" ]; then
+                            echo "Argo CD has deployed the expected image."
+                            break
+                        fi
+
+                        if [ "$i" -eq 60 ]; then
+                            echo "ERROR: Argo CD did not deploy ${EXPECTED_IMAGE}"
+                            exit 1
+                        fi
+
+                        echo "Waiting for Argo CD reconciliation..."
+                        sleep 5
+                    done
+
+                    echo "Waiting for Kubernetes rollout..."
+
+                    kubectl rollout status deployment/hotstar-clone --timeout=180s
+
+                    echo "Checking deployment..."
                     kubectl get deployment hotstar-clone
 
                     echo "Checking pods..."
-
-                    kubectl get pods \
-                        -l app=hotstar-clone \
-                        -o wide
+                    kubectl get pods -l app=hotstar-clone -o wide
 
                     echo "Checking service..."
-
                     kubectl get svc hotstar-clone
 
                     echo "Waiting for LoadBalancer hostname..."
 
+                    ALB_URL=""
+
                     for i in $(seq 1 30); do
                         ALB_URL=$(kubectl get svc hotstar-clone \
-                            -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+                            -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' \
+                            2>/dev/null || true)
 
                         if [ -n "$ALB_URL" ]; then
                             break
@@ -234,9 +264,7 @@ pipeline {
 
                     echo "Checking HTTP response..."
 
-                    HTTP_STATUS=$(curl -L \
-                        -s \
-                        -o /dev/null \
+                    HTTP_STATUS=$(curl -L -s -o /dev/null \
                         -w "%{http_code}" \
                         --max-time 15 \
                         "http://${ALB_URL}/")
