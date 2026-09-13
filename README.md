@@ -54,8 +54,6 @@ The project will progressively implement:
 
 # CI/CD pipeline
 # CI/CD 
-# CI 
-# C 
 
 
 CI/CD pipeline verification
