@@ -36,13 +36,13 @@ pipeline {
                     def scannerHome = tool 'SonarScanner'
 
                     withSonarQubeEnv('SonarQube') {
-                        sh '''
-                            echo "URL=$SONAR_HOST_URL"
-                            echo "TOKEN_PRESENT=$([ -n "$SONAR_AUTH_TOKEN" ] && echo yes || echo no)"
-                            curl -s -o /dev/null -w "SONAR_AUTH_HTTP=%{http_code}\\n" \
-                                -u "$SONAR_AUTH_TOKEN:" \
-                                "$SONAR_HOST_URL/api/authentication/validate"
-                        '''
+                        sh """
+                            export SONAR_TOKEN="\$SONAR_AUTH_TOKEN"
+                            ${scannerHome}/bin/sonar-scanner \
+                                -Dsonar.projectKey=hotstar-clone \
+                                -Dsonar.sources=app \
+                                -Dsonar.exclusions=app/node_modules/**,app/build/**,**/zap-report.*,**/*-report.*
+                        """
                     }
                 }
             }
