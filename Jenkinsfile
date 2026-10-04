@@ -36,13 +36,12 @@ pipeline {
                     def scannerHome = tool 'SonarScanner'
 
                     withSonarQubeEnv('SonarQube') {
-                        sh '''
-                            echo "Checking SonarQube project access..."
-                            curl -s \
-                                -u "$SONAR_AUTH_TOKEN:" \
-                                "$SONAR_HOST_URL/api/projects/search?projects=hotstar-clone" \
-                                | sed 's/"token":"[^"]*"/"token":"REDACTED"/g'
-                        '''
+                        sh """
+                            ${scannerHome}/bin/sonar-scanner \
+                                -Dsonar.projectKey=hotstar-clone \
+                                -Dsonar.sources=app \
+                                -Dsonar.exclusions=app/node_modules/**,app/build/**,**/zap-report.*,**/*-report.*
+                        """
                     }
                 }
             }
