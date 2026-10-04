@@ -36,14 +36,13 @@ pipeline {
                     def scannerHome = tool 'SonarScanner'
 
                     withSonarQubeEnv('SonarQube') {
-                        sh """
+                        sh '''
                             echo "URL=$SONAR_HOST_URL"
-                            echo "TOKEN_LENGTH=${#SONAR_AUTH_TOKEN}"
+                            echo "TOKEN_PRESENT=$([ -n "$SONAR_AUTH_TOKEN" ] && echo yes || echo no)"
                             curl -s -o /dev/null -w "SONAR_AUTH_HTTP=%{http_code}\\n" \
                                 -u "$SONAR_AUTH_TOKEN:" \
                                 "$SONAR_HOST_URL/api/authentication/validate"
-
-                        """
+                        '''
                     }
                 }
             }
