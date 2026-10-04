@@ -37,10 +37,11 @@ pipeline {
 
                     withSonarQubeEnv('SonarQube') {
                         sh """
-                            export SONAR_TOKEN="\$SONAR_AUTH_TOKEN"
+                            unset SONAR_LOGIN
                             ${scannerHome}/bin/sonar-scanner \
                                 -Dsonar.projectKey=hotstar-clone \
                                 -Dsonar.sources=app \
+                                -Dsonar.token="\$SONAR_AUTH_TOKEN" \
                                 -Dsonar.exclusions=app/node_modules/**,app/build/**,**/zap-report.*,**/*-report.*
                         """
                     }
