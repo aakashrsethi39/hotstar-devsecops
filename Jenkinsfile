@@ -37,11 +37,12 @@ pipeline {
 
                     withSonarQubeEnv('SonarQube') {
                         sh """
-                            ${scannerHome}/bin/sonar-scanner \
-                            -Dsonar.projectKey=hotstar-clone \
-                            -Dsonar.sources=app \
-                            -Dsonar.login=\$SONAR_AUTH_TOKEN \
-                            -Dsonar.exclusions=app/node_modules/**,app/build/**,**/zap-report.*,**/*-report.*
+                            echo "URL=$SONAR_HOST_URL"
+                            echo "TOKEN_LENGTH=${#SONAR_AUTH_TOKEN}"
+                            curl -s -o /dev/null -w "SONAR_AUTH_HTTP=%{http_code}\\n" \
+                                -u "$SONAR_AUTH_TOKEN:" \
+                                "$SONAR_HOST_URL/api/authentication/validate"
+
                         """
                     }
                 }
