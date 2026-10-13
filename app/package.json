@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "overrides": {
-    "nth-check": "3.0.1",
-    "serialize-javascript": "7.1.1",
     "underscore": "1.13.8",
     "postcss": "8.5.28",
-    "svgo": "4.1.0"
+    "svgo": "4.1.0",
+    "brace-expansion": "2.1.7",
+    "proxy-addr": "2.0.8",
+    "compression": "1.8.2",
+    "shell-quote": "1.11.0",
+    "source-map-js": "1.2.2"
   },
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
