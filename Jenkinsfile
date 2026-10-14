@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         AWS_REGION = 'ap-south-1'
-        AWS_ACCOUNT_ID = '892334471137'
+        AWS_ACCOUNT_ID = '297681904929'
         ECR_REPOSITORY = 'hotstar-clone'
         ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
     }
@@ -168,7 +168,7 @@ pipeline {
 
                         echo "Updating Kubernetes image to ${IMAGE_TAG}..."
 
-                        sed -i "s|image: .*hotstar-clone.*|image: 892334471137.dkr.ecr.ap-south-1.amazonaws.com/hotstar-clone:${IMAGE_TAG}|" k8s/deployment.yaml
+                        sed -i "s|image: .*hotstar-clone.*|image: ${ECR_REGISTRY}/hotstar-clone:${IMAGE_TAG}|" k8s/deployment.yaml
 
                         echo "Updated image:"
                         grep "image:" k8s/deployment.yaml
@@ -201,7 +201,7 @@ pipeline {
 
                     echo "Waiting for Argo CD to deploy image ${IMAGE_TAG}..."
 
-                    EXPECTED_IMAGE="892334471137.dkr.ecr.ap-south-1.amazonaws.com/hotstar-clone:${IMAGE_TAG}"
+                    EXPECTED_IMAGE="${ECR_REGISTRY}/hotstar-clone:${IMAGE_TAG}"
 
                     for i in $(seq 1 60); do
 
