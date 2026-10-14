@@ -15,7 +15,7 @@ RUN npm run build
 
 
 FROM nginx:1-alpine-slim
-RUN apk upgrade --no-cache pcre2
+RUN apk upgrade --no-cache pcre2 zlib
 
 RUN addgroup -S nginxgroup && \
     adduser -S nginxuser -G nginxgroup
