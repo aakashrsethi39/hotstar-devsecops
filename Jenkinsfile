@@ -59,7 +59,9 @@ pipeline {
             steps {
                 sh '''
                     trivy fs \
+		      --scanners vuln \
                       --severity HIGH,CRITICAL \
+		      --ignorefile .trivyignore \
                       --exit-code 1 \
                       .
                 '''

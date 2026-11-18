@@ -1,0 +1,6 @@
+# CVE-2026-112366
+# picomatch 2.3.2 and 4.0.7
+# Transitive dependencies used by React build/test tooling.
+# No patched version listed in the current Trivy report.
+# Temporary exception: review when a fix becomes available.
+CVE-2026-112366
