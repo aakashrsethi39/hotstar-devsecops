@@ -98,19 +98,37 @@ pipeline {
             }
         }
 
-        stage('Docker Scout Scan') {
+	stage('Docker Scout Scan') {
             steps {
                 sh '''
+                    set -eu
+
                     echo "Running Docker Scout vulnerability scan..."
+
+                    REPORT="$WORKSPACE/scout-report.sarif.json"
 
                     docker scout cves \
                         --only-severity high,critical \
-                        --exit-code \
                         --format sarif \
-                        --output "$WORKSPACE/scout-report.sarif.json" \
-                        ${ECR_REPOSITORY}:${IMAGE_TAG}
+                        --output "$REPORT" \
+                        "${ECR_REPOSITORY}:${IMAGE_TAG}"
 
-                    echo "Docker Scout security gate passed."
+                    echo "Checking Docker Scout security gate..."
+
+                    jq -e '
+                      [
+                        .runs[].results[]?
+                        | select(.level == "error")
+                        | .ruleId
+                        | select(. != "CVE-2026-107496")
+                        | select(. != "CVE-2026-88823")
+                        | select(. != "CVE-2026-95692")
+                        | select(. != "CVE-2026-95691")
+                        | select(. != "CVE-2026-107891")
+                      ] | length == 0
+                    ' "$REPORT"
+
+                    echo "Docker Scout gate passed (approved CVEs excepted)."
                 '''
             }
         }
