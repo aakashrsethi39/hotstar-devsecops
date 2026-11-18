@@ -78,6 +78,7 @@ pipeline {
                 ]) {
                     sh '''
                         docker build \
+			  --pull \
                           --build-arg REACT_APP_TMDB_API_KEY="$TMDB_API_KEY" \
                           -t ${ECR_REPOSITORY}:${IMAGE_TAG} \
                           .

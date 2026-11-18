@@ -1,4 +1,5 @@
 FROM node:20-alpine AS build
+RUN apk upgrade --no-cache
 
 WORKDIR /app
 
