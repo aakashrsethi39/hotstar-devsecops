@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         AWS_REGION = 'ap-south-1'
-        AWS_ACCOUNT_ID = '297681904929'
+        AWS_ACCOUNT_ID = '630702276489'
         ECR_REPOSITORY = 'hotstar-clone'
         ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
     }
@@ -160,8 +160,9 @@ pipeline {
 
                         rm -rf infra-repo
 
-                        git clone \
-                            https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/aakashrsethi39/hotstar-dev-secops.git \
+			git -c credential.helper='!f() { echo "username=$GIT_USERNAME"; echo "password=$GIT_TOKEN"; }; f' \
+                            clone \
+                            https://github.com/aakashrsethi39/hotstar-dev-secops.git \
                             infra-repo
 
                         cd infra-repo
@@ -187,7 +188,8 @@ pipeline {
 
                         echo "Pushing GitOps change..."
 
-                        git push origin main
+                        git -c credential.helper='!f() { echo "username=$GIT_USERNAME"; echo "password=$GIT_TOKEN"; }; f' \
+                            push origin main
 
                         echo "GitOps repository updated successfully."
                     '''
@@ -205,7 +207,7 @@ pipeline {
 
                     for i in $(seq 1 60); do
 
-                        CURRENT_IMAGE=$(kubectl get deployment hotstar-clone \
+                        CURRENT_IMAGE=$(kubectl -n hotstar get deployment hotstar-clone \
                             -o jsonpath='{.spec.template.spec.containers[0].image}' \
                             2>/dev/null || true)
 
@@ -227,23 +229,23 @@ pipeline {
 
                     echo "Waiting for Kubernetes rollout..."
 
-                    kubectl rollout status deployment/hotstar-clone --timeout=180s
+                    kubectl -n hotstar rollout status deployment/hotstar-clone --timeout=180s
 
                     echo "Checking deployment..."
-                    kubectl get deployment hotstar-clone
+                    kubectl -n hotstar get deployment hotstar-clone
 
                     echo "Checking pods..."
-                    kubectl get pods -l app=hotstar-clone -o wide
+                    kubectl -n hotstar get pods -l app=hotstar-clone -o wide
 
                     echo "Checking service..."
-                    kubectl get svc hotstar-clone
+                    kubectl -n hotstar get svc hotstar-clone
 
                     echo "Waiting for LoadBalancer hostname..."
 
                     ALB_URL=""
 
                     for i in $(seq 1 30); do
-                        ALB_URL=$(kubectl get svc hotstar-clone \
+                        ALB_URL=$(kubectl -n hotstar get ingress hotstar-ingress \
                             -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' \
                             2>/dev/null || true)
 
@@ -284,7 +286,7 @@ pipeline {
         stage('OWASP ZAP DAST') {
             steps {
                 sh '''
-                    ALB_URL=$(kubectl get svc hotstar-clone \
+                    ALB_URL=$(kubectl -n hotstar get ingress hotstar-ingress \
                         -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
                     echo "Scanning: http://${ALB_URL}"
